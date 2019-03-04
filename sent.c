@@ -391,8 +391,7 @@ reload(const Arg *arg)
 	xdraw();
 }
 
-void
-load(FILE *fp)
+void load(FILE *fp)
 {
 	static size_t size = 0;
 	size_t blen, maxlines;
@@ -403,10 +402,9 @@ load(FILE *fp)
 	while (1) {
 		/* eat consecutive empty lines */
 		while ((p = fgets(buf, sizeof(buf), fp)))
-			if (strcmp(buf, "\n") != 0 && buf[0] != '#')
-				break;
-		if (!p)
-			break;
+			if (strcmp(buf, "\n") && buf[0] != '#') break;
+
+		if (!p) break;
 
 		if ((slidecount+1) * sizeof(*slides) >= size)
 			if (!(slides = realloc(slides, (size += BUFSIZ))))
@@ -416,8 +414,7 @@ load(FILE *fp)
 		maxlines = 0;
 		memset((s = &slides[slidecount]), 0, sizeof(Slide));
 		do {
-			if (buf[0] == '#')
-				continue;
+			if (buf[0] == '#') continue;
 
 			/* grow lines array */
 			if (s->linecount >= maxlines) {
@@ -439,35 +436,31 @@ load(FILE *fp)
 			if (s->lines[s->linecount][0] == '\\')
 				memmove(s->lines[s->linecount], &s->lines[s->linecount][1], blen);
 			s->linecount++;
-		} while ((p = fgets(buf, sizeof(buf), fp)) && strcmp(buf, "\n") != 0);
+		} while ((p = fgets(buf, sizeof(buf), fp)) &&
+				strcmp(buf, "\n"));
 
 		slidecount++;
-		if (!p)
-			break;
+		if (!p) break;
 	}
 }
 
-void
-advance(const Arg *arg)
+void advance(const Arg *arg)
 {
 	int new_idx = idx + arg->i;
 	LIMIT(new_idx, 0, slidecount-1);
 	if (new_idx != idx) {
-		if (slides[idx].img)
-			slides[idx].img->state &= ~SCALED;
+		if(slides[idx].img) slides[idx].img->state &= ~SCALED;
 		idx = new_idx;
 		xdraw();
 	}
 }
 
-void
-quit(const Arg *arg)
+void quit(const Arg *arg)
 {
 	running = 0;
 }
 
-void
-resize(int width, int height)
+void resize(int width, int height)
 {
 	xw.w = width;
 	xw.h = height;
@@ -476,25 +469,21 @@ resize(int width, int height)
 	drw_resize(d, width, height);
 }
 
-void
-run()
+void run()
 {
 	XEvent ev;
 
 	/* Waiting for window mapping */
 	while (1) {
 		XNextEvent(xw.dpy, &ev);
-		if (ev.type == ConfigureNotify) {
+		if (ev.type == ConfigureNotify)
 			resize(ev.xconfigure.width, ev.xconfigure.height);
-		} else if (ev.type == MapNotify) {
-			break;
-		}
+		else if (ev.type == MapNotify) break;
 	}
 
 	while (running) {
 		XNextEvent(xw.dpy, &ev);
-		if (handler[ev.type])
-			(handler[ev.type])(&ev);
+		if (handler[ev.type]) handler[ev.type](&ev);
 	}
 }
 
@@ -520,14 +509,12 @@ xdraw()
 			         0);
 		drw_map(d, xw.win, 0, 0, xw.w, xw.h);
 	} else {
-		if (!(im->state & SCALED))
-			ffprepare(im);
+		if (!(im->state & SCALED)) ffprepare(im);
 		ffdraw(im);
 	}
 }
 
-void
-xhints()
+void xhints()
 {
 	XClassHint class = {.res_name = "sent", .res_class = "presenter"};
 	XWMHints wm = {.flags = InputHint, .input = True};
@@ -544,8 +531,7 @@ xhints()
 	XFree(sizeh);
 }
 
-void
-xinit()
+void xinit()
 {
 	XTextProperty prop;
 	unsigned i;
@@ -588,8 +574,7 @@ xinit()
 	XSync(xw.dpy, False);
 }
 
-void
-xloadfonts()
+void xloadfonts()
 {
 	int i, j;
 	char *fstrs[LEN(fontfallbacks)];
@@ -622,22 +607,17 @@ bpress(XEvent *e)
 			mshortcuts[i].func(&(mshortcuts[i].arg));
 }
 
-void
-cmessage(XEvent *e)
+void cmessage(XEvent *e)
 {
-	if (e->xclient.data.l[0] == xw.wmdeletewin)
-		running = 0;
+	if (e->xclient.data.l[0] == xw.wmdeletewin) running = 0;
 }
 
-void
-expose(XEvent *e)
+void expose(XEvent *e)
 {
-	if (0 == e->xexpose.count)
-		xdraw();
+	if (0 == e->xexpose.count) xdraw();
 }
 
-void
-kpress(XEvent *e)
+void kpress(XEvent *e)
 {
 	unsigned i;
 	KeySym sym;
@@ -658,25 +638,20 @@ void configure(XEvent *e)
 int main(int argc, char *argv[])
 {
 	FILE *fp = NULL;
-
 	ARGBEGIN {
 	case 'v':
 		fputs("sent-"VERSION"\n", stderr);
 		return 0;
 	default: die("%s [file]", argv0);
 	} ARGEND
-
 	if (!argv[0] || !strcmp(argv[0], "-")) fp = stdin;
 	else if (!(fp = fopen(fname = argv[0], "r")))
 		die("sent: Unable to open '%s' for reading:", fname);
 	load(fp);
 	fclose(fp);
-
 	if (!slidecount) die("%s [file]", argv0);
-
 	xinit();
 	run();
-
 	cleanup(0);
 	return 0;
 }
