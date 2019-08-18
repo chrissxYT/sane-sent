@@ -1,2 +1,3 @@
 #!/bin/sh
+echo 'Please update all your scripts to `netsh -C "sudo make install" chrissxYT/sane-sent`, beause netsh < 1.2 support might be removed in the near future'
 sudo make install
